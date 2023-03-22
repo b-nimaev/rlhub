@@ -1,12 +1,13 @@
 import 'dotenv/config';
 import express from 'express';
 import bodyParser from 'body-parser';
-import { Telegraf } from 'telegraf';
+import { Telegraf, Scenes } from 'telegraf';
 import { User } from './models/IUser';
 import './bot/utlis/webhook';
 import './database';
 
 const app = express();
+const stage = new Scenes.Stage();
 app.use(bodyParser.json());
 
 const bot = new Telegraf(process.env.BOT_TOKEN!);
