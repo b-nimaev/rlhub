@@ -2,14 +2,31 @@ import 'dotenv/config';
 import express from 'express';
 import bodyParser from 'body-parser';
 import { Telegraf } from 'telegraf';
-import { set_webhook } from './bot/utlis/webhook';
+import { User } from './models/IUser';
+import './bot/utlis/webhook';
+import './database';
 
 const app = express();
 app.use(bodyParser.json());
 
 const bot = new Telegraf(process.env.BOT_TOKEN!);
 
-bot.start((ctx) => {
+bot.start(async (ctx) => {
+
+    const user = new User({
+        telegramId: ctx.from.id,
+        firstName: ctx.from.first_name,
+        lastName: ctx.from.last_name,
+        username: ctx.from.username,
+    });
+
+    try {
+        await user.save();
+        console.log(`User ${ctx.from.id} saved to database!`);
+    } catch (err) {
+        console.error(err);
+    }
+
     ctx.reply('Hello!');
 });
 
@@ -21,7 +38,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-
-set_webhook()
 
 export { bot }

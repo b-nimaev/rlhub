@@ -9,7 +9,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.set_webhook = void 0;
 const __1 = require("../..");
 function set_webhook() {
     return __awaiter(this, void 0, void 0, function* () {
@@ -27,4 +26,4 @@ function set_webhook() {
         }
     });
 }
-exports.set_webhook = set_webhook;
+module.exports = set_webhook();

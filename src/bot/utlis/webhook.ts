@@ -11,9 +11,9 @@ async function set_webhook() {
             .then((json: { tunnels: any[]; }) => json.tunnels.find(tunnel => tunnel.proto === 'https'))
             .then((secureTunnel: { public_url: any; }) => bot.telegram.setWebhook(`${secureTunnel.public_url}/bot${process.env.BOT_TOKEN}`))
             .then(async (status: any) => {
-                console.log(status)
+                console.log(`webhook setted: ${status}`)
             })
     }
 }
 
-export { set_webhook }
+module.exports = set_webhook()
