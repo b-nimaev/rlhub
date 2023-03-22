@@ -21,7 +21,7 @@ function set_webhook() {
                 .then((json) => json.tunnels.find(tunnel => tunnel.proto === 'https'))
                 .then((secureTunnel) => __1.bot.telegram.setWebhook(`${secureTunnel.public_url}/bot${process.env.BOT_TOKEN}`))
                 .then((status) => __awaiter(this, void 0, void 0, function* () {
-                console.log(status);
+                console.log(`webhook setted: ${status}`);
             }));
         }
     });

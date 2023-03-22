@@ -1,36 +1,22 @@
 import 'dotenv/config';
 import express from 'express';
 import bodyParser from 'body-parser';
-import { Telegraf, Scenes } from 'telegraf';
-import { User } from './models/IUser';
+import { Telegraf, Scenes, session } from 'telegraf';
 import './bot/utlis/webhook';
 import './database';
+import rlhubContext from './bot/models/rlhubContext';
+
+// scenes
+import home from './bot/views/home.scene';
+import settings from './bot/views/settings.scene';
 
 const app = express();
-const stage = new Scenes.Stage();
 app.use(bodyParser.json());
 
-const bot = new Telegraf(process.env.BOT_TOKEN!);
-
-bot.start(async (ctx) => {
-
-    const user = new User({
-        telegramId: ctx.from.id,
-        firstName: ctx.from.first_name,
-        lastName: ctx.from.last_name,
-        username: ctx.from.username,
-    });
-
-    try {
-        await user.save();
-        console.log(`User ${ctx.from.id} saved to database!`);
-    } catch (err) {
-        console.error(err);
-    }
-
-    ctx.reply('Hello!');
-});
-
+const bot = new Telegraf<rlhubContext>(process.env.BOT_TOKEN!);
+const stage = new Scenes.Stage<rlhubContext>([home, settings], { default: 'home' });
+bot.use(session())
+bot.use(stage.middleware())
 app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
     bot.handleUpdate(req.body, res);
 });

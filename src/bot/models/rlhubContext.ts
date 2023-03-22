@@ -13,3 +13,5 @@ interface rlhubContext extends Context {
     scene: Scenes.SceneContextScene<rlhubContext, rlhubWizardSession>;
     wizard: Scenes.WizardContextWizard<rlhubContext>
 }
+
+export default rlhubContext
