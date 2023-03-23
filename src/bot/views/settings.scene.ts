@@ -5,7 +5,9 @@ import rlhubContext from "../models/rlhubContext";
 const handler = new Composer<rlhubContext>();
 const settings = new Scenes.WizardScene("settings", handler);
 
-settings.enter(async (ctx: rlhubContext) => {
+settings.enter(async (ctx: rlhubContext) => await greeting (ctx));
+async function greeting (ctx: rlhubContext) {
+
     try {
 
         const extra: ExtraEditMessageText = {
@@ -25,7 +27,15 @@ settings.enter(async (ctx: rlhubContext) => {
             }
         }
 
-        let message = `<b>Настройки</b> \n\nИмя пользователя: <b>${ctx.from?.first_name}</b>`
+        let message: string = ''
+
+        if (ctx.from) {
+            if (ctx.from?.first_name) {
+                message = `<b>Настройки</b> \n\nИмя пользователя: <b>${ctx.from?.first_name}</b>`
+            } else {
+                message = `<b>Настройки</b> \n\nИмя пользователя: <b>${ctx.from?.id}</b>`
+            }
+        }
 
         ctx.updateType === 'message' ? await ctx.reply(message, extra) : false
         ctx.updateType === 'callback_query' ? await ctx.editMessageText(message, extra) : false
@@ -33,18 +43,20 @@ settings.enter(async (ctx: rlhubContext) => {
     } catch (err) {
 
         console.error(err);
-    
+
     }
 
-});
+}
+
+handler.on("message", async (ctx) => await greeting (ctx))
 
 settings.action("back", async (ctx) => {
-    await ctx.answerCbQuery('Личный кабинет')
+    await ctx.answerCbQuery()
     return ctx.scene.enter("dashboard")
 })
 
 settings.action("choose_ln", async (ctx) => {
-    return ctx.answerCbQuery("Выбрать язык")
+    return ctx.answerCbQuery()
 })
 
 export default settings

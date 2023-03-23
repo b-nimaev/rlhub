@@ -10,6 +10,10 @@ const sentences = new Scenes.WizardScene("sentences", handler,
     async (ctx: rlhubContext) => await my_sentences_handler(ctx),
     async (ctx: rlhubContext) => await add_sentences_handler(ctx));
 
+function formatMoney(amount: any) {
+    return new Intl.NumberFormat('ru-RU').format(amount);
+}
+
 async function greeting(ctx: rlhubContext) {
 
     try {
@@ -47,9 +51,13 @@ async function greeting(ctx: rlhubContext) {
 
         let sentences: ISentence[] = await Sentence.find({})
 
+        let left = 100000 - sentences.length
+        
+        
+
         let message = `<b>Перевод предложений 🚀</b> \n\n`
         message += `Наша цель собрать 100 000 корректных переводов предложений из разных сфер жизни, для создания машинного-бурятского языка\n\n`
-        message += `А Чтобы переводить предложения, нужны сами предложения на <b>русском языке</b>. \nИх у нас ${sentences.length}.`
+        message += `А Чтобы переводить предложения, нужны сами предложения на <b>русском языке</b>. \n\nДо конца цели осталось <b>${formatMoney(left)}</b>x`
 
         ctx.updateType === 'message' ? await ctx.reply(message, extra) : false
         ctx.updateType === 'callback_query' ? await ctx.editMessageText(message, extra) : false

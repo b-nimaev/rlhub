@@ -4,9 +4,9 @@ import { IUser, User } from "../../models/IUser";
 import rlhubContext from "../models/rlhubContext";
 
 const handler = new Composer<rlhubContext>();
-const dashboard = new Scenes.WizardScene("dashboard", handler);
+const dashboard = new Scenes.WizardScene("dashboard", handler, async (ctx) => await about_project(ctx));
 
-dashboard.enter(async (ctx: rlhubContext) => {
+async function greeting (ctx: rlhubContext) {
     try {
         let user: IUser | null = await User.findOne({ id: ctx.from?.id })
 
@@ -63,17 +63,90 @@ dashboard.enter(async (ctx: rlhubContext) => {
     } catch (err) {
         console.error(err);
     }
+}
 
-});
+dashboard.enter(async (ctx: rlhubContext) => await greeting(ctx));
 
 dashboard.action("common_settings", async (ctx) => {
     await ctx.answerCbQuery('Личный кабинет / Настройки')
     return ctx.scene.enter('settings')
 })
 
-dashboard.action("about", async (ctx) => {
-    return ctx.answerCbQuery('О проекте ...')
-})
+async function about_project (ctx: rlhubContext) {
+    
+    try {
+
+        if (ctx.updateType === 'callback_query') {
+            if (ctx.callbackQuery) {
+
+                // @ts-ignore
+                if (ctx.callbackQuery.data) {
+
+                    // @ts-ignore
+                    let data: 'back' = ctx.callbackQuery.data
+
+                    if (data === 'back') {
+                        
+                        ctx.wizard.selectStep(0)
+                        await ctx.answerCbQuery()
+                        await greeting(ctx)
+
+                    }
+
+                }
+
+            }
+        } else {
+            about_project_section_render (ctx)
+        }
+
+    } catch (err) {
+        
+        console.log(err)
+
+    }
+
+}
+
+dashboard.action("about", async (ctx) => await about_project_section_render (ctx))
+
+async function about_project_section_render (ctx: rlhubContext) {
+    try {
+        
+        let message: string = '<b>Личный кабинет — О проекте</b> \n\nНаш проект нацелен на развитие бурятского языка, который является важной частью культурного наследия Бурятии. \n\nМы стремимся сохранить и продвигать язык среди молодого поколения, создавая образовательные материалы и организуя языковые мероприятия. \n\nНаша цель - сохранить богатство бурятской культуры и ее языка для будущих поколений.'
+        let extra: ExtraEditMessageText = {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: 'Назад',
+                            callback_data: 'back'
+                        }
+                    ]
+                ]
+            }
+        }
+
+        if (ctx.updateType === 'callback_query') {
+            
+            await ctx.editMessageText(message, extra)
+
+            ctx.answerCbQuery()
+            ctx.wizard.selectStep(1)
+
+        } else {
+
+            await ctx.reply(message, extra)
+
+        }
+
+    } catch (err) {
+        console.log(err)
+    }
+}
+
+handler.on("message", async (ctx) => await greeting(ctx))
 
 dashboard.action('reference_materials', async (ctx) => {
     return ctx.answerCbQuery()

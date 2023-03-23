@@ -229,10 +229,7 @@ async function add_sentences_handler (ctx: rlhubContext) {
     
 }
 
-// home.action(/./, async (ctx) => {
-//     await ctx.answerCbQuery('Команда не распознана')
-//     return await greeting(ctx)
-// })
+handler.on("message", async (ctx) => await greeting (ctx))
 
 export default home
 export { add_sentences_handler }
