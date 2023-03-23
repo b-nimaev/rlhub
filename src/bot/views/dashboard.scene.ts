@@ -53,7 +53,7 @@ async function greeting (ctx: rlhubContext) {
             }
 
             let words = []
-            let message = `<b>Личный кабинет</b> \n\nОбщий рейтинг: 100 \nДобавлено слов: 0 \nСлов на модерации: ${words.length} \nПереведено предложений: 0 \nДобавлено предложений: ${user.proposedProposals.length}`
+            let message = `<b>Личный кабинет</b> \n\nОбщий рейтинг: ${user.rating} \nДобавлено слов: 0 \nСлов на модерации: ${words.length} \nПереведено предложений: 0 \nДобавлено предложений: ${user.proposedProposals.length}`
 
             ctx.updateType === 'message' ? await ctx.reply(message, extra) : false
             ctx.updateType === 'callback_query' ? await ctx.editMessageText(message, extra) : false

@@ -1,3 +1,5 @@
+import { text } from "body-parser";
+import e from "express";
 import { ObjectId } from "mongodb";
 import { Composer, Scenes } from "telegraf";
 import { ExtraEditMessageText } from "telegraf/typings/telegram-types";
@@ -8,12 +10,14 @@ import rlhubContext from "../models/rlhubContext";
 const handler = new Composer<rlhubContext>();
 const sentences = new Scenes.WizardScene("sentences", handler, 
     async (ctx: rlhubContext) => await my_sentences_handler(ctx),
-    async (ctx: rlhubContext) => await add_sentences_handler(ctx));
+    async (ctx: rlhubContext) => await add_sentences_handler(ctx),
+    async (ctx: rlhubContext) => await translate_sentences_handler(ctx))
 
 function formatMoney(amount: any) {
     return new Intl.NumberFormat('ru-RU').format(amount);
 }
 
+// при входе
 async function greeting(ctx: rlhubContext) {
 
     try {
@@ -68,15 +72,28 @@ async function greeting(ctx: rlhubContext) {
     }
 
 }
-
 sentences.enter(async (ctx: rlhubContext) => await greeting(ctx));
 
-sentences.action('my_sentences', async (ctx) => {
-
+// статистика
+sentences.action('my_sentences', async (ctx) => await my_sentences(ctx))
+async function my_sentences (ctx: rlhubContext) {
     try {
 
-        ctx.answerCbQuery()
         let message: string = `<b>Статистика</b> \n\n`
+        let extra: ExtraEditMessageText = {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: 'Назад',
+                            callback_data: 'back'
+                        }
+                    ]
+                ]
+            }
+        }
+
         message += `Здесь будут отображаться ваша статисика по работе с предложениями\n\n`
 
         let user: IUser | null = await User.findOne({ id: ctx.from?.id })
@@ -117,19 +134,16 @@ sentences.action('my_sentences', async (ctx) => {
         message += `Отклонено предложений: ${props_obj.declined.length}\n`
         message += `Предложений на рассмотрении: ${props_obj.not_view.length}`
 
-        await ctx.editMessageText(message, {
-            parse_mode: 'HTML',
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        {
-                            text: 'Назад',
-                            callback_data: 'back'
-                        }
-                    ]
-                ]
-            }
-        })
+        if (ctx.updateType === 'callback_query') {
+
+            ctx.answerCbQuery()
+            await ctx.editMessageText(message, extra)
+
+        } else {
+
+            await ctx.reply(message, extra)
+        
+        }
 
         ctx.wizard.selectStep(1)
 
@@ -138,8 +152,7 @@ sentences.action('my_sentences', async (ctx) => {
         console.log(err)
 
     }
-})
-
+}
 async function my_sentences_handler (ctx: rlhubContext) {
 
     try {
@@ -162,6 +175,8 @@ async function my_sentences_handler (ctx: rlhubContext) {
 
                 }
             }
+        } else {
+            await my_sentences (ctx)
         }
 
     } catch (err) {
@@ -171,34 +186,94 @@ async function my_sentences_handler (ctx: rlhubContext) {
     }
 
 }
-sentences.action("home", async (ctx) => {
-    ctx.answerCbQuery()
-    ctx.scene.enter('home')
-})
-sentences.action("add_sentence", async (ctx) => {
+
+// перевод предложений
+sentences.action("translate_sentences", async (ctx) => await translate_sentences(ctx))
+async function translate_sentences (ctx: rlhubContext) {
+    try {
+
+        let message: string = '<b>Добавление перевода</b>\n\n'
+        let extra: ExtraEditMessageText = {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: 'Назад',
+                            callback_data: 'back'
+                        }
+                    ]
+                ]
+            }
+        }
+        
+        if (ctx.updateType === 'callback_query') {
+            await ctx.editMessageText(message, extra)
+        } else {
+            await ctx.reply(message, extra)
+        }
+
+        ctx.wizard.selectStep(3)
+
+    } catch (err) {
+        console.log(err)
+    }
+}
+async function translate_sentences_handler (ctx: rlhubContext) {
+
+    if (ctx.from) {
+        try {
+
+            if (ctx.updateType === 'callback_query') {
+
+                // @ts-ignore
+                if (ctx.callbackQuery.data) {
+
+                    // @ts-ignore
+                    let data: 'back' = ctx.callbackQuery.data
+
+                    if (data === 'back') {
+
+                        await greeting(ctx)
+                        ctx.wizard.selectStep(0)
+
+                    }
+
+                }
+
+            } else {
+                await translate_sentences(ctx)
+            }
+
+        } catch (err) {
+
+            console.log(err)
+
+        }
+    }
+
+}
+
+// добавление предложений
+sentences.action("add_sentence", async (ctx) => await add_sentences(ctx))
+async function add_sentences(ctx: rlhubContext) {
     ctx.answerCbQuery()
     ctx.wizard.selectStep(2)
     let message = `<b>Добавление перевода — Предложения</b>\n\n`
     message += `Отправьте список предложений на русском которые хотите добавить в базу данных для их перевода в дальнейшем`
-    await ctx.editMessageText(message, { parse_mode: 'HTML', reply_markup: {
-        inline_keyboard: [
-            [
-                {
-                    text: 'Назад',
-                    callback_data: 'back'
-                }
+    await ctx.editMessageText(message, {
+        parse_mode: 'HTML', reply_markup: {
+            inline_keyboard: [
+                [
+                    {
+                        text: 'Назад',
+                        callback_data: 'back'
+                    }
+                ]
             ]
-        ]
-    } })
-})
-sentences.action("translate_sentences", async (ctx) => {
-    try {
-        
-    } catch (err) {
-        console.log(err)
-    }
-})
-
+        }
+    })
+}
 async function add_sentences_handler(ctx: rlhubContext) {
 
     if (ctx.from) {
@@ -320,5 +395,14 @@ async function add_sentences_handler(ctx: rlhubContext) {
     }
 
 }
+
+// переход на главную
+sentences.action("home", async (ctx) => {
+    ctx.answerCbQuery()
+    ctx.scene.enter('home')
+})
+
+// обработка входящих на сцене
+handler.on("message", async (ctx) => await greeting(ctx))
 
 export default sentences
