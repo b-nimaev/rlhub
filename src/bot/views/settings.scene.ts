@@ -6,33 +6,34 @@ const handler = new Composer<rlhubContext>();
 const settings = new Scenes.WizardScene("settings", handler);
 
 settings.enter(async (ctx: rlhubContext) => {
-
-    const extra: ExtraReplyMessage | ExtraEditMessageText = {
-        parse_mode: 'HTML',
-        reply_markup: {
-            inline_keyboard: [
-                [{
-                    text: 'Выбрать язык интерфейса',
-                    callback_data: 'choose_ln'
-                }
-                ],
-                [{
-                    text: 'Назад',
-                    callback_data: 'back'
-                }],
-            ]
-        }
-    }
-
-    let message = `<b>Настройки</b> \n\nИмя пользователя: <b>${ctx.from?.first_name}</b>`
-
     try {
 
+        const extra: ExtraEditMessageText = {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [{
+                        text: 'Выбрать язык интерфейса',
+                        callback_data: 'choose_ln'
+                    }
+                    ],
+                    [{
+                        text: 'Назад',
+                        callback_data: 'back'
+                    }],
+                ]
+            }
+        }
+
+        let message = `<b>Настройки</b> \n\nИмя пользователя: <b>${ctx.from?.first_name}</b>`
+
         ctx.updateType === 'message' ? await ctx.reply(message, extra) : false
-        ctx.updateType === 'callback_query' ? await ctx.reply(message, extra) : false
+        ctx.updateType === 'callback_query' ? await ctx.editMessageText(message, extra) : false
 
     } catch (err) {
+
         console.error(err);
+    
     }
 
 });
