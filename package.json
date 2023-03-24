@@ -12,6 +12,7 @@
   "author": "alexandr bnimaev",
   "license": "ISC",
   "dependencies": {
+    "@qiwi/bill-payments-node-js-sdk": "^3.2.1",
     "axios": "^1.3.4",
     "mongodb": "^5.1.0",
     "typescript": "^5.0.2"

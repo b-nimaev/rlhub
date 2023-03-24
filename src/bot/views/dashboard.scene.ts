@@ -152,9 +152,39 @@ dashboard.action('reference_materials', async (ctx) => {
     return ctx.answerCbQuery()
 })
 
-dashboard.action("help", async (ctx) => {
-    return ctx.answerCbQuery('Помощь проекту')
-})
+dashboard.action("help", async (ctx) => await help(ctx))
+async function help(ctx: rlhubContext) {
+    try {
+
+        let message: string = `<b>Поддержка проекта 💰</b> \n\n`
+        message += `https://my.qiwi.com/form/Sandak-Dorzho-BUmcm2ZMV6`
+        
+        let extra: ExtraEditMessageText = {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: 'Назад',
+                            callback_data: 'back'
+                        }
+                    ]
+                ]
+            }
+        }
+
+        if (ctx.updateType === 'callback_query') {
+            await ctx.editMessageText(message, extra)
+        } else {
+            await ctx.reply(message, extra)
+        }
+
+    } catch (err) {
+
+        console.log(err)
+
+    }
+}
 
 dashboard.action("home", async (ctx) => {
     return ctx.scene.enter('home')

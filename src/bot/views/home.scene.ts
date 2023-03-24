@@ -94,7 +94,8 @@ home.action("study", async (ctx) => {
 })
 
 home.action("moderation", async (ctx) => {
-    return ctx.answerCbQuery('Доступа нет')
+    ctx.answerCbQuery()
+    return ctx.scene.enter('moderation')
 })
 
 home.action("dashboard", async (ctx) => {
