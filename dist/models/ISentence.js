@@ -23,20 +23,29 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.User = void 0;
+exports.Translation = exports.Sentence = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-const userSchema = new mongoose_1.Schema({
-    id: { type: Number, required: true },
-    username: { type: String, required: false },
-    first_name: { type: String, required: false },
-    last_name: { type: String, required: false },
-    supported: { type: Number, required: true },
-    translations: { type: [mongoose_1.default.Schema.Types.ObjectId], required: false, default: [] },
-    voted_translations: { type: [mongoose_1.default.Schema.Types.ObjectId], required: false, default: [] },
-    rating: { type: Number, required: true, default: 1 },
-    proposedProposals: { type: [String], required: true, default: [] }
+const translationSchema = new mongoose_1.default.Schema({
+    sentence_russian: { type: String, required: true },
+    translate_text: { type: String, required: true },
+    author: { type: Number, required: true },
+    votes: {
+        type: [{
+                user_id: { type: Number, required: true },
+                vote: { type: Boolean, required: true }
+            }], default: []
+    },
+});
+const Translation = (0, mongoose_1.model)("Translation", translationSchema);
+exports.Translation = Translation;
+const sentenceSchema = new mongoose_1.default.Schema({
+    text: { type: String, required: true },
+    author: { type: Number, required: true },
+    translations: [{ type: String, required: true }],
+    skipped_by: [{ type: Number, required: true }],
+    accepted: { type: String, required: true }
 }, {
     timestamps: true
 });
-const User = (0, mongoose_1.model)('User', userSchema);
-exports.User = User;
+const Sentence = (0, mongoose_1.model)("Sentence", sentenceSchema);
+exports.Sentence = Sentence;
