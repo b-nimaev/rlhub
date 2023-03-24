@@ -5,20 +5,40 @@ interface vote {
     vote: boolean
 }
 
+interface translation {
+    sentence_russian: string;
+    translate_text: string;
+    author: number;
+    votes: vote[];
+}
+
+const translationSchema: Schema<translation> = new mongoose.Schema({
+    sentence_russian: { type: String, required: true },
+    translate_text: { type: String, required: true },
+    author: { type: Number, required: true },
+    votes: {
+        type: [{
+            user_id: { type: Number, required: true },
+            vote: { type: Boolean, required: true }
+        }], default: []
+    },
+})
+
+const Translation = model<translation>("Translation", translationSchema);
+
 interface ISentence {
     text: string;
     author: number;
-    votes: { user_id: number; vote: boolean; }[];
     accepted: 'accepted' | 'declined' | 'not view';
+    translations: string[];
+    skipped_by: number[];
 }
 
 const sentenceSchema: Schema<ISentence> = new mongoose.Schema({
     text: { type: String, required: true },
     author: { type: Number, required: true },
-    votes: { type: [{
-        user_id: { type: Number, required: true },
-        vote: { type: Boolean, required: true }
-    }], default: [] },
+    translations: [{ type: String, required: true }],
+    skipped_by: [{ type: Number, required: true }],
     accepted: { type: String, required: true }
 }, {
     timestamps: true
@@ -26,4 +46,4 @@ const sentenceSchema: Schema<ISentence> = new mongoose.Schema({
 
 const Sentence = model<ISentence>("Sentence", sentenceSchema);
 
-export { Sentence, ISentence };
+export { Sentence, Translation, ISentence, translation };

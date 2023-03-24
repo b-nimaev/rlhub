@@ -131,8 +131,9 @@ async function add_sentences_handler (ctx: rlhubContext) {
                                 let sentence: ISentence = {
                                     text: ctx.session.sentences[i],
                                     author: ctx.from.id,
-                                    votes: [],
-                                    accepted: 'not view'
+                                    accepted: 'not view',
+                                    translations: [],
+                                    skipped_by: []
                                 }
 
                                 new Sentence(sentence).save().then(async (data) => {
@@ -172,8 +173,9 @@ async function add_sentences_handler (ctx: rlhubContext) {
                     let sentence: ISentence = {
                         text: text.toLocaleLowerCase(),
                         author: user_id,
-                        votes: [],
-                        accepted: 'not view'
+                        accepted: 'not view',
+                        translations: [],
+                        skipped_by: []
                     }
 
                     let message: string = ``

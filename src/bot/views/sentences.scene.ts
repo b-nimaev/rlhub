@@ -1,9 +1,10 @@
 import { text } from "body-parser";
 import e from "express";
 import { ObjectId } from "mongodb";
+import { Document } from "mongoose";
 import { Composer, Scenes } from "telegraf";
 import { ExtraEditMessageText } from "telegraf/typings/telegram-types";
-import { ISentence, Sentence } from "../../models/ISentence";
+import { ISentence, Sentence, Translation, translation } from "../../models/ISentence";
 import { IUser, User } from "../../models/IUser";
 import rlhubContext from "../models/rlhubContext";
 
@@ -11,7 +12,8 @@ const handler = new Composer<rlhubContext>();
 const sentences = new Scenes.WizardScene("sentences", handler, 
     async (ctx: rlhubContext) => await my_sentences_handler(ctx),
     async (ctx: rlhubContext) => await add_sentences_handler(ctx),
-    async (ctx: rlhubContext) => await translate_sentences_handler(ctx))
+    async (ctx: rlhubContext) => await translate_sentences_handler(ctx),
+    async (ctx: rlhubContext) => await add_translate_to_sentences_hander(ctx))
 
 function formatMoney(amount: any) {
     return new Intl.NumberFormat('ru-RU').format(amount);
@@ -192,12 +194,24 @@ sentences.action("translate_sentences", async (ctx) => await translate_sentences
 async function translate_sentences (ctx: rlhubContext) {
     try {
 
-        let message: string = '<b>Добавление перевода</b>\n\n'
+        let message: string = '<b>Добавление перевода 🎯</b>\n\n'
+        message += 'Я буду давать предложение за предложением для перевода, можно заполнять данные без остановки.\n\n'
+        message += `Несколько важных правил:\n`
+        message += `— Переводим слово в слово\n`
+        message += `— Используем минимум ород угэнуудые \n`
+        message += `— Всё предложением пишем на кириллице \n`
+        message += `— Не забываем про знаки препинания \n\n`
+        message += `— Буквы отсутствующие в кириллице — <code>һ</code>, <code>ү</code>, <code>өө</code>, копируем из предложенных. \n❗️При клике на них, скопируется нужная буква \n\n`
+        message += `<b>И помните, чем качественнее перевод — тем дольше проживет язык</b>`
         let extra: ExtraEditMessageText = {
             parse_mode: 'HTML',
             reply_markup: {
                 inline_keyboard: [
                     [
+                        {
+                            text: 'Начать',
+                            callback_data: 'start'
+                        },
                         {
                             text: 'Назад',
                             callback_data: 'back'
@@ -219,6 +233,85 @@ async function translate_sentences (ctx: rlhubContext) {
         console.log(err)
     }
 }
+
+async function render_sentencse_for_translate (ctx: rlhubContext, sentence: ISentence) {
+    
+    let message: string = ''
+    
+    // @ts-ignore
+    ctx.scene.session.sentence_id = sentence?._id.toString()
+    message += `Отправьте перевод предложения: \n`
+    message += `<code>${sentence?.text}</code>`
+    message += `\n\n— Буквы отсутствующие в кириллице — <code>һ</code>, <code>ү</code>, <code>өө</code>, копируем из предложенных.`
+
+    if (sentence?.translations.length) {
+        message += `\n\n<i>Существующие переводы:</i>`
+    }
+
+    // тут вывести переводы
+
+    ctx.wizard.selectStep(4)
+
+    return message
+}
+
+async function render_sft (ctx: rlhubContext) {
+    try {
+
+        let message: string = `<b>Перевод предложений</b>\n\n`;
+        let extra: ExtraEditMessageText = {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: 'Пропустить',
+                            callback_data: 'skip'
+                        },
+                        {
+                            text: 'Назад',
+                            callback_data: 'back'
+                        }
+                    ]
+                ]
+            }
+        }
+
+        let sentence = await Sentence.findOne({
+            skipped_by: {
+                $ne: ctx.from?.id
+            }
+        }).sort({ 'translations.length': 1 })
+
+
+        if (sentence) {
+
+            await render_sentencse_for_translate(ctx, sentence).then((response: string) => {
+                message += response
+            })
+            
+        } else {
+            
+            message += `Предложений не найдено`
+            
+        }
+        
+        if (ctx.updateType === 'callback_query') {
+            ctx.answerCbQuery()
+            return await ctx.editMessageText(message, extra)
+        } else {
+            return await ctx.reply(message, extra)
+        }
+
+
+
+    } catch (err) {
+        
+        console.log(err)
+
+    }
+}
+
 async function translate_sentences_handler (ctx: rlhubContext) {
 
     if (ctx.from) {
@@ -230,12 +323,18 @@ async function translate_sentences_handler (ctx: rlhubContext) {
                 if (ctx.callbackQuery.data) {
 
                     // @ts-ignore
-                    let data: 'back' = ctx.callbackQuery.data
+                    let data: 'back' | 'start' = ctx.callbackQuery.data
 
                     if (data === 'back') {
 
                         await greeting(ctx)
                         ctx.wizard.selectStep(0)
+
+                    }
+
+                    if (data === 'start') {
+
+                        await render_sft(ctx)
 
                     }
 
@@ -254,8 +353,102 @@ async function translate_sentences_handler (ctx: rlhubContext) {
 
 }
 
+// добавление перевода предложения
+async function add_translate_to_sentences_hander(ctx: rlhubContext) {
+    if (ctx.from) {
+        try {
+
+            if (ctx.updateType === 'callback_query') {
+
+                // @ts-ignore
+                if (ctx.callbackQuery.data) {
+
+                    // @ts-ignore
+                    let data: 'back' | 'skip' = ctx.callbackQuery.data
+
+                    if (data === 'back') {
+
+                        await translate_sentences(ctx)
+
+                    }
+
+                    if (data === 'skip') {
+
+                        await Sentence.findOneAndUpdate({
+                            _id: new ObjectId(ctx.session.__scenes.sentence_id)
+                        }, {
+                            $push: {
+                                skipped_by: ctx.from.id
+                            }
+                        }).then(async () => {
+                            await render_sft(ctx)
+                        })
+
+                        ctx.answerCbQuery()
+
+                    }
+
+                }
+
+            }
+
+            if (ctx.updateType === 'message') {
+
+                // @ts-ignore
+                if (ctx.message.text) {
+
+                    // @ts-ignore
+                    let text: string = ctx.message.text
+                    let user_id: number = ctx.from.id
+
+                    let translation: translation = {
+                        sentence_russian: ctx.scene.session.sentence_id,
+                        translate_text: text,
+                        author: user_id,
+                        votes: []
+                    }
+
+                    new Translation(translation).save().then(async (document) => {
+                        await Sentence.findOneAndUpdate({
+                            _id: new ObjectId(ctx.scene.session.sentence_id)
+                        }, {
+                            $push: {
+                                translations: document._id.toString()
+                            }
+                        })
+                    })
+
+                } else {
+
+                    await ctx.reply("Нужно отправить в текстовом виде")
+                    await render_sft(ctx)
+
+                }
+
+            }
+
+        } catch (err) {
+
+            console.log(err)
+
+        }
+    }
+}
+async function add_translate_to_sentences(ctx: rlhubContext) {
+    try {
+
+
+
+    } catch (err) {
+
+        console.log(err)
+
+    }
+}
+
+
 // добавление предложений
-sentences.action("add_sentence", async (ctx) => await add_sentences(ctx))
+sentences.action("add_sentence", async (ctx: rlhubContext) => await add_sentences(ctx))
 async function add_sentences(ctx: rlhubContext) {
     ctx.answerCbQuery()
     ctx.wizard.selectStep(2)
@@ -296,8 +489,9 @@ async function add_sentences_handler(ctx: rlhubContext) {
                                 let sentence: ISentence = {
                                     text: ctx.session.sentences[i],
                                     author: ctx.from.id,
-                                    votes: [],
-                                    accepted: 'not view'
+                                    translations: [],
+                                    accepted: 'not view',
+                                    skipped_by: []
                                 }
 
                                 new Sentence(sentence).save().then(async (data) => {
@@ -339,8 +533,9 @@ async function add_sentences_handler(ctx: rlhubContext) {
                     let sentence: ISentence = {
                         text: text.toLocaleLowerCase(),
                         author: user_id,
-                        votes: [],
-                        accepted: 'not view'
+                        translations: [],
+                        accepted: 'not view',
+                        skipped_by: []
                     }
 
                     let message: string = ``
