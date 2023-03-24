@@ -246,6 +246,19 @@ async function render_sentencse_for_translate (ctx: rlhubContext, sentence: ISen
 
     if (sentence?.translations.length) {
         message += `\n\n<i>Существующие переводы:</i>`
+
+        for (let i = 0; i < sentence.translations.length; i++) {
+
+            let translation: translation | null = await Translation.findOne({
+                _id: new ObjectId(sentence.translations[i])
+            })
+
+            if (translation) {
+                message += `\n${i+1}) ${translation.translate_text}`
+            }
+
+        }
+
     }
 
     // тут вывести переводы
