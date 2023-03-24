@@ -61,7 +61,8 @@ home.start(async (ctx: rlhubContext) => {
                     voted_translations: [],
                     rating: 0,
                     is_bot: false,
-                    proposedProposals: []
+                    proposedProposals: [],
+                    supported: 0
                 }
                 new User(user).save()
 

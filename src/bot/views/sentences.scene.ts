@@ -1,12 +1,10 @@
-import { text } from "body-parser";
-import e from "express";
 import { ObjectId } from "mongodb";
-import { Document } from "mongoose";
 import { Composer, Scenes } from "telegraf";
 import { ExtraEditMessageText } from "telegraf/typings/telegram-types";
 import { ISentence, Sentence, Translation, translation } from "../../models/ISentence";
 import { IUser, User } from "../../models/IUser";
 import rlhubContext from "../models/rlhubContext";
+import formatMoney from "../utlis/format_money";
 
 const handler = new Composer<rlhubContext>();
 const sentences = new Scenes.WizardScene("sentences", handler,
@@ -14,10 +12,6 @@ const sentences = new Scenes.WizardScene("sentences", handler,
     async (ctx: rlhubContext) => await add_sentences_handler(ctx),
     async (ctx: rlhubContext) => await translate_sentences_handler(ctx),
     async (ctx: rlhubContext) => await add_translate_to_sentences_hander(ctx))
-
-function formatMoney(amount: any) {
-    return new Intl.NumberFormat('ru-RU').format(amount);
-}
 
 // при входе
 async function greeting(ctx: rlhubContext) {

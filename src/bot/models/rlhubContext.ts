@@ -1,7 +1,8 @@
 import { Context, Scenes } from "telegraf";
 
 interface rlhubWizardSession extends Scenes.WizardSessionData {
-    sentence_id: string
+    sentence_id: string,
+    amount: number
 }
 
 interface rlhubSession extends Scenes.WizardSession<rlhubWizardSession> {
