@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = `mongodb://${process.env.MONGODB_URI}:27017/` || 'mongodb://localhost:27017/rlhub';
+const MONGODB_URI = `mongodb://${process.env.MONGODB_URI}:27017/rlhub` || 'mongodb://localhost:27017/rlhub';
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
