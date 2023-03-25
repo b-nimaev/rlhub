@@ -5,7 +5,9 @@ export default async function set_webhook() {
     if (process.env.MODE === 'production') {
         bot.telegram.setWebhook(
             `${process.env.WEBHOOK_URL}/bot${process.env.BOT_TOKEN}`
-        );
+        ).then(() => {
+            console.log('webhook setted')
+        });
     } else {
         await fetch('http://localhost:4040/api/tunnels')
             .then((res: { json: () => any; }) => res.json())
