@@ -26,4 +26,4 @@ function set_webhook() {
         }
     });
 }
-module.exports = set_webhook();
+exports.default = set_webhook;

@@ -1,6 +1,7 @@
 import { bot } from "../..";
 
-async function set_webhook() {
+
+export default async function set_webhook() {
     if (process.env.MODE === 'production') {
         bot.telegram.setWebhook(
             `${process.env.WEBHOOK_URL}/bot${process.env.BOT_TOKEN}`
@@ -15,5 +16,3 @@ async function set_webhook() {
             })
     }
 }
-
-module.exports = set_webhook()
