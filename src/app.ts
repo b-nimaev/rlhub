@@ -10,8 +10,7 @@ const app = express();
 
 app.use(bodyParser.json());
 
-app.post(`/bot${process.env.BOT_TOKEN}`, (req, res) => {
-    console.log('123')
+app.post(`/bot${process.env.secret_path}`, (req, res) => {
     bot.handleUpdate(req.body, res);
 });
 
@@ -20,8 +19,6 @@ app.listen(PORT, () => {
 });
 
 app.get('/payment/success', async (req, res) => {
-
-    console.log('123')
 
     // @ts-ignore
     let billId: string = res.req.url.replace('/payment/success?billId=', '')

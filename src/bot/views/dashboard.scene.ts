@@ -89,7 +89,12 @@ async function greeting (ctx: rlhubContext) {
             }
 
             let words = []
-            let message: string = `<b>Личный кабинет</b> \n\nОбщий рейтинг: ${user.rating} \nДобавлено слов: 0 \nСлов на модерации: ${words.length} \nПереведено предложений: 0 \nДобавлено предложений: ${user.proposedProposals.length}`
+            let message: string = `<b>Личный кабинет</b> \n\n`
+            message += `Общий рейтинг: ${user.rating} \n`
+            message += `Добавлено слов: 0 \n`
+            message += `Слов на модерации: ${words.length} \n`
+            message += `Переведено предложений: 0 \n`
+            message += `Добавлено предложений: ${user.proposedProposals.length}`
 
             message += `\n\n<b>Внесено в проект ${format_money(user.supported)} ₽</b>`
 

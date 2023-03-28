@@ -1,5 +1,6 @@
 import { Composer, Scenes } from "telegraf";
 import { ExtraReplyMessage, ExtraEditMessageText } from "telegraf/typings/telegram-types";
+import { ISentence, Sentence } from "../../models/ISentence";
 import rlhubContext from "../models/rlhubContext";
 
 const handler = new Composer<rlhubContext>();
@@ -17,13 +18,13 @@ async function greeting (ctx: rlhubContext) {
                 inline_keyboard: [
                     [{
                         text: 'Предложения',
+                        callback_data: 'moderation_sentences'
+                    }],
+                    [{
+                        text: 'Переводы',
                         callback_data: 'moderation_translates'
                     }
                     ],
-                    [{
-                        text: 'Переводы',
-                        callback_data: 'moderation_sentences'
-                    }],
                     [{
                         text: 'Назад',
                         callback_data: 'back'
@@ -73,6 +74,18 @@ async function moderation_sentences (ctx: rlhubContext) {
         
         if (ctx.updateType === 'callback_query') {
             
+            Sentence.find({
+                accepted: "not view"
+            }).then(async (documents) => {
+                if (documents) {
+                    if (documents.length) {
+
+                        
+
+                    }
+                }
+            })
+
             ctx.answerCbQuery()
 
         }

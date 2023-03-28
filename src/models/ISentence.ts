@@ -34,7 +34,7 @@ interface ISentence {
     skipped_by: number[];
 }
 
-const sentenceSchema: Schema<ISentence> = new mongoose.Schema({
+const Sentence = model<ISentence>("Sentence", new Schema({
     text: { type: String, required: true },
     author: { type: Number, required: true },
     translations: [{ type: String, required: true }],
@@ -42,8 +42,6 @@ const sentenceSchema: Schema<ISentence> = new mongoose.Schema({
     accepted: { type: String, required: true }
 }, {
     timestamps: true
-});
-
-const Sentence = model<ISentence>("Sentence", sentenceSchema);
+}));
 
 export { Sentence, Translation, ISentence, translation };

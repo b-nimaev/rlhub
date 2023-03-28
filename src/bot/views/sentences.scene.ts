@@ -49,7 +49,7 @@ async function greeting(ctx: rlhubContext) {
             }
         }
 
-        let sentences: ISentence[] = await Sentence.find({})
+        let sentences: translation[] = await Translation.find()
 
         let left = 100000 - sentences.length
 
@@ -57,7 +57,7 @@ async function greeting(ctx: rlhubContext) {
 
         let message = `<b>Перевод предложений 🚀</b> \n\n`
         message += `Наша цель собрать 100 000 корректных переводов предложений из разных сфер жизни, для создания машинного-бурятского языка\n\n`
-        message += `А Чтобы переводить предложения, нужны сами предложения на <b>русском языке</b>. \n\nДо конца цели осталось <b>${formatMoney(left)}</b>x`
+        message += `А Чтобы переводить предложения, нужны сами предложения на <b>русском языке</b>. \n\nДо конца цели осталось <b>${formatMoney(left)} переводов</b>`
 
         ctx.updateType === 'message' ? await ctx.reply(message, extra) : false
         ctx.updateType === 'callback_query' ? await ctx.editMessageText(message, extra) : false
@@ -248,8 +248,10 @@ async function render_sentencse_for_translate(ctx: rlhubContext, sentence: ISent
     message += `\n\n— Буквы отсутствующие в кириллице — <code>һ</code>, <code>ү</code>, <code>өө</code>, копируем из предложенных.`
 
     if (sentence?.translations.length) {
-        message += `\n\n<i>Существующие переводы:</i>`
 
+        let author_translation: translation[] = []
+        let common_translation: translation[] = []
+        
         for (let i = 0; i < sentence.translations.length; i++) {
 
             let translation: translation | null = await Translation.findOne({
@@ -257,10 +259,45 @@ async function render_sentencse_for_translate(ctx: rlhubContext, sentence: ISent
             })
 
             if (translation) {
-                message += `\n${i + 1}) ${translation.translate_text}`
+
+                if (translation.author === ctx.from?.id) {
+
+                    author_translation.push(translation)
+
+                } else {
+
+                    common_translation.push(translation)
+
+                    // message += `\n${i + 1}) ${translation.translate_text}`
+                }
+
             }
 
         }
+
+        if (common_translation.length) {
+            message += `\n\n<i>Переводы пользователей</i>`
+
+            for (let i = 0; i < common_translation.length; i++) {
+
+                message += `\n${i + 1}) ${common_translation[i].translate_text}`
+
+            }
+            
+        }
+
+        // ваши переводы
+
+        if (author_translation.length) {
+            message += `\n\n<i>Ваши переводы</i>`
+
+            for (let i = 0; i < author_translation.length; i++) {
+
+                message += `\n${i + 1}) ${author_translation[i].translate_text}`
+
+            }
+        }
+        
 
     }
 
@@ -275,23 +312,7 @@ async function render_sft(ctx: rlhubContext) {
     try {
 
         let message: string = `<b>Перевод предложений</b>\n\n`;
-        let extra: ExtraEditMessageText = {
-            parse_mode: 'HTML',
-            reply_markup: {
-                inline_keyboard: [
-                    [
-                        {
-                            text: 'Пропустить',
-                            callback_data: 'skip'
-                        },
-                        {
-                            text: 'Назад',
-                            callback_data: 'back'
-                        }
-                    ]
-                ]
-            }
-        }
+        let extra: ExtraEditMessageText
 
         let sentence = await Sentence.findOne({
             skipped_by: {
@@ -306,8 +327,38 @@ async function render_sft(ctx: rlhubContext) {
                 message += response
             })
 
-        } else {
+            extra = {
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: 'Пропустить',
+                                callback_data: 'skip'
+                            },
+                            {
+                                text: 'Назад',
+                                callback_data: 'back'
+                            }
+                        ]
+                    ]
+                }
+            }
 
+        } else {
+            extra = {
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: 'Назад',
+                                callback_data: 'back'
+                            }
+                        ]
+                    ]
+                }
+            }
             message += `Предложений не найдено`
 
         }
@@ -459,6 +510,8 @@ async function add_translate_to_sentences_hander(ctx: rlhubContext) {
                                 translations: document._id.toString()
                             }
                         })
+
+                        await render_sft(ctx)
                     })
 
                 } else {

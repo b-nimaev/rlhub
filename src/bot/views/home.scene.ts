@@ -129,16 +129,14 @@ async function add_sentences_handler (ctx: rlhubContext) {
                         if (data === 'send_sentences') {
                             
                             for (let i = 0; i < ctx.session.sentences.length; i++) {
-                                
-                                let sentence: ISentence = {
+                            
+                                new Sentence({
                                     text: ctx.session.sentences[i],
                                     author: ctx.from.id,
                                     accepted: 'not view',
                                     translations: [],
                                     skipped_by: []
-                                }
-
-                                new Sentence(sentence).save().then(async (data) => {
+                                }).save().then(async (data) => {
                                     let object_id = data._id
 
                                     await User.findOneAndUpdate({ id: ctx.from?.id }, { $push: {

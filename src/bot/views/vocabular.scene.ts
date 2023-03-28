@@ -92,7 +92,7 @@ async function translate_word (ctx: rlhubContext) {
                 if (language === 'russian-word') {
                     message = 'Перевод отсутствует'
                 } else {
-                    message = 'Уршуулга угы байна..'
+                    message = 'Оршуулга угы байна..'
                 }
             }
 
