@@ -64,8 +64,8 @@ home.start(async (ctx: rlhubContext) => {
                     proposedProposals: [],
                     supported: 0
                 }
-                new User(user).save()
-
+                await new User(user).save()
+                await greeting(ctx)
             }
 
         } else {
@@ -109,6 +109,12 @@ home.enter(async (ctx) => { return await greeting(ctx) })
 home.command('add_sentences', async (ctx) => {
     await ctx.reply('Отправьте список предложений на русском которые хотите добавить в базу данных для их перевода в дальнейшем')
     ctx.wizard.selectStep(1)
+})
+
+home.command("reset_activet", async (ctx) => {
+    await Sentence.updateMany({
+        active_translator: []
+    })
 })
 
 async function add_sentences_handler (ctx: rlhubContext) {
@@ -175,7 +181,8 @@ async function add_sentences_handler (ctx: rlhubContext) {
                         author: user_id,
                         accepted: 'not view',
                         translations: [],
-                        skipped_by: []
+                        skipped_by: [],
+                        active_translator: []
                     }
 
                     let message: string = ``

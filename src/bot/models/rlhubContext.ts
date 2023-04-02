@@ -1,8 +1,10 @@
+import { ObjectId } from "mongoose";
 import { Context, Scenes } from "telegraf";
 
 interface rlhubWizardSession extends Scenes.WizardSessionData {
     sentence_id: string,
-    amount: number
+    amount: number,
+    active_translation: string
 }
 
 interface rlhubSession extends Scenes.WizardSession<rlhubWizardSession> {
