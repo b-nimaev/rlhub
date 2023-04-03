@@ -1,5 +1,5 @@
 import { ExtraEditMessageText } from "telegraf/typings/telegram-types";
-import { translation, ActiveTranslator, Sentence, Translation } from "../../../models/ISentence";
+import { translation, ActiveTranslator, Sentence, Translation, ISentence } from "../../../models/ISentence";
 import { User } from "../../../models/IUser";
 import rlhubContext from "../../models/rlhubContext";
 import get_tranlations from "./getTranslations";
@@ -24,25 +24,37 @@ export default async function render_sft(ctx: rlhubContext) {
 
         // @ts-ignore
         let sentence: ISentence = await Sentence.aggregate([
-            { $match: { skipped_by: { $ne: ctx.from?.id } } },
-            {
-                $project: {
-                    text: 1,
-                    active_translator: 1,
-                    translations: 1,
-                    translations_length: { $size: "$translations" }
-                }
-            },
-            {
-                $sort: {
-                    active_translator: 1,
-                    translations_length: 1
-                }
-            },
+            { $sort: { active_translator: 1 } },
+            { $project: { text: 1, author: 1, accepted: 1, translations: 1 } },
+            { $sort: { 'translations.length': 1 } },
             { $limit: 1 }
-        ]).then(async (docs) => {
-            return docs[0]
+        ]).then(async (doc) => {
+            return doc[0]
         })
+
+        console.log(sentence)
+
+        // @ts-ignore
+        // let sentence: ISentence = await Sentence.aggregate([
+        //     { $match: { skipped_by: { $ne: ctx.from?.id } } },
+        //     {
+        //         $project: {
+        //             text: 1,
+        //             active_translator: 1,
+        //             translations: 1,
+        //             translations_length: { $size: "$translations" }
+        //         }
+        //     },
+        //     {
+        //         $sort: {
+        //             active_translator: 1,
+        //             translations_length: 1
+        //         }
+        //     },
+        //     { $limit: 1 }
+        // ]).then(async (docs) => {
+        //     return docs[0]
+        // })
 
         if (sentence) {
             console.log(sentence)
