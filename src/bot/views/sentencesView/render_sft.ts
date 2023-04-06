@@ -24,16 +24,17 @@ export default async function render_sft(ctx: rlhubContext) {
 
         // @ts-ignore
         let sentence: ISentence = await Sentence.aggregate([
+            { $match: { skipped_by: { $ne: ctx.from?.id } } },
             { $sort: { active_translator: 1 } },
-            { $project: { text: 1, author: 1, accepted: 1, translations: 1 } },
-            { $sort: { 'translations.length': 1 } },
+            { $project: { text: 1, author: 1, accepted: 1, translations: 1, translations_length: { $size: "$translations" } } },
+            { $sort: { translations_length: 1, active_translator: 1 } },
             { $limit: 1 }
         ]).then(async (doc) => {
             return doc[0]
         })
 
         console.log(sentence)
-
+        // ctx.scene.session.active_translation
         // @ts-ignore
         // let sentence: ISentence = await Sentence.aggregate([
         //     { $match: { skipped_by: { $ne: ctx.from?.id } } },
@@ -57,7 +58,6 @@ export default async function render_sft(ctx: rlhubContext) {
         // })
 
         if (sentence) {
-            console.log(sentence)
 
             await render_sentencse_for_translate(ctx, sentence).then((response: string) => {
                 message += response
@@ -88,15 +88,16 @@ export default async function render_sft(ctx: rlhubContext) {
                             _id: sentence._id
                         }, {
                             $push: {
-                                active_translator: document.id
+                                active_translator: document.id.toString()
                             }
                         }).then(async () => {
+                            ctx.scene.session.active_translation = document.id.toString()
                             setTimeout(async () => {
                                 await Sentence.findOneAndUpdate({
                                     _id: sentence._id
                                 }, {
                                     $pull: {
-                                        active_translator: document.id
+                                        active_translator: document.id.toString()
                                     }
                                 }).then(async () => {
                                     const message = `User ${user?._id} removed active translator ${document.id} from sentence ${sentence._id} at ${moment().tz(timezone).toISOString()}\n`;
@@ -106,7 +107,7 @@ export default async function render_sft(ctx: rlhubContext) {
                                 }).catch(err => {
                                     console.log(err)
                                 })
-                            }, 60 * 5 * 1000);
+                            }, 60 * 1000);
                         })
                     })
                 })
@@ -125,9 +126,13 @@ export default async function render_sft(ctx: rlhubContext) {
 
         if (ctx.updateType === 'callback_query') {
             ctx.answerCbQuery()
-            return await ctx.editMessageText(message, extra)
+            return await ctx.editMessageText(message, extra).then(() => {
+                ctx.scene.session.active_translation
+            })
         } else {
-            return await ctx.reply(message, extra)
+            return await ctx.reply(message, extra).then(() => {
+                ctx.scene.session.active_translation
+            })
         }
 
 
@@ -172,7 +177,7 @@ export async function add_translate_to_sentences_hander(ctx: rlhubContext) {
 
                     }
 
-                    if (data === 'skip') {
+                    if (data === 'skip' || data === 'continue') {
 
                         await Sentence.findOneAndUpdate({
                             _id: new ObjectId(ctx.session.__scenes.sentence_id)
@@ -197,10 +202,6 @@ export async function add_translate_to_sentences_hander(ctx: rlhubContext) {
 
                     }
 
-                    if (data === 'continue') {
-                        await render_sft(ctx)
-                    }
-
                 }
 
             }
@@ -220,6 +221,8 @@ export async function add_translate_to_sentences_hander(ctx: rlhubContext) {
                         author: user_id,
                         votes: []
                     }
+
+                    console.log(ctx.scene.session.active_translation)
 
                     new Translation(translation).save().then(async (document) => {
                         await Sentence.findOneAndUpdate({
