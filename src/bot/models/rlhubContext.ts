@@ -15,7 +15,8 @@ interface rlhubSession extends Scenes.WizardSession<rlhubWizardSession> {
 interface rlhubContext extends Context {
     session: rlhubSession;
     scene: Scenes.SceneContextScene<rlhubContext, rlhubWizardSession>;
-    wizard: Scenes.WizardContextWizard<rlhubContext>
+    wizard: Scenes.WizardContextWizard<rlhubContext>,
+    update: any
 }
 
 export default rlhubContext

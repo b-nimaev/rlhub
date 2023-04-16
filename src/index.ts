@@ -32,12 +32,12 @@ async function generateSentences(prompt: string, modelEngine: string, numSentenc
     return sentences.slice(0, numSentences);
 }
 
-async function main() {
-    const sentences = await generateSentences(prompt, modelEngine, 1000);
-    fs.writeFileSync('sentences.txt', sentences.join('\n'));
-}
+// async function main() {
+//     const sentences = await generateSentences(prompt, modelEngine, 1000);
+//     fs.writeFileSync('sentences.txt', sentences.join('\n'));
+// }
 
-main();
+// main();
 // scenes
 import home from './bot/views/home.scene';
 import sentences from './bot/views/sentences.scene';
@@ -48,7 +48,7 @@ import moderation from './bot/views/moderation.scene';
 
 
 const bot = new Telegraf<rlhubContext>(process.env.BOT_TOKEN!);
-const stage = new Scenes.Stage<rlhubContext>([home, vocabular, sentences, dashboard, moderation, settings], { default: 'home' });
+const stage: any = new Scenes.Stage<rlhubContext>([home, vocabular, sentences, dashboard, moderation, settings], { default: 'home' });
 
 (async () => await set_webhook())();
 
