@@ -41,6 +41,7 @@ const ActiveTranslator = model<active_translator>("Active_translator", new Schem
 }))
 
 interface ISentence {
+    createdAt?: any;
     text: string;
     author: number;
     accepted: 'accepted' | 'declined' | 'not view';

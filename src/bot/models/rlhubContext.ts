@@ -4,7 +4,8 @@ import { Context, Scenes } from "telegraf";
 interface rlhubWizardSession extends Scenes.WizardSessionData {
     sentence_id: string,
     amount: number,
-    active_translation: string
+    active_translation: string,
+    moderation_sentence: string
 }
 
 interface rlhubSession extends Scenes.WizardSession<rlhubWizardSession> {

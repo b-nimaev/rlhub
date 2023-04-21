@@ -24,7 +24,7 @@ export default async function render_sft(ctx: rlhubContext) {
 
         // @ts-ignore
         let sentence: ISentence = await Sentence.aggregate([
-            { $match: { skipped_by: { $ne: ctx.from?.id } } },
+            { $match: { skipped_by: { $ne: ctx.from?.id }, accepted: 'accepted' } },
             { $sort: { active_translator: 1 } },
             { $project: { text: 1, author: 1, accepted: 1, translations: 1, translations_length: { $size: "$translations" } } },
             { $sort: { translations_length: 1, active_translator: 1 } },

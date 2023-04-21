@@ -17,12 +17,15 @@ app.post(`/bot${process.env.secret_path}`, (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-
+app.get('/success', async (req, res) => {
+    let billId: string = res.req.url.replace('/payment/success?billId=', '')
+    console.log(billId)
+})
 app.get('/payment/success', async (req, res) => {
 
     // @ts-ignore
     let billId: string = res.req.url.replace('/payment/success?billId=', '')
-
+    console.log(billId)
     let payment: IPayment | null = await Payment.findOne({
         _id: new ObjectId(billId)
     })
@@ -54,7 +57,10 @@ app.get('/payment/success', async (req, res) => {
                 supported: user.supported + payment.amount
             }
         })
+
     }
+
+    res.redirect('https://t.me/burlive_bot')
 
 })
 

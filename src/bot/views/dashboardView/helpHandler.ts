@@ -2,6 +2,7 @@ import { ExtraEditMessageText } from "telegraf/typings/telegram-types"
 import rlhubContext from "../../models/rlhubContext"
 import format_money from "../../utlis/format_money"
 import greeting from "./greeting"
+import { IPayment, Payment } from "../../../models/IPayment";
 const QiwiBillPaymentsAPI = require('@qiwi/bill-payments-node-js-sdk');
 
 const secret_key: string | undefined = process.env.secret_key;
@@ -78,7 +79,6 @@ export default async function help_handler(ctx: rlhubContext) {
                 const currentDate = new Date();
                 const futureDate = (currentDate.getTime() + 0.2 * 60 * 60 * 1000);
 
-                // @ts-ignore
                 let payment: IPayment = await new Payment({
                     user_id: ctx.from?.id,
                     amount: ctx.scene.session.amount,
@@ -130,7 +130,7 @@ async function get_link_for_payment(ctx: rlhubContext, amount: number, billID: s
             expirationDateTime: expirationDateTime,
             comment: 'На сохранение бурятского яызыка',
             email: 'alexandrbnimaev@yandex.ru',
-            successUrl: `https://60da-5-136-245-89.eu.ngrok.io/payment/success?billId=${billID}`
+            successUrl: `https://5491-95-188-237-196.ngrok-free.app/payment/success?billId=${billID}`
         }
 
         let link = qiwiApi.createBill(billID, params)
