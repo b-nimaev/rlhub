@@ -10,7 +10,8 @@ const app = express();
 
 app.use(bodyParser.json());
 
-app.post(`/bot${process.env.secret_path}`, (req, res) => {
+app.post(`/bot123`, (req, res) => {
+    console.log('handler')
     bot.handleUpdate(req.body, res);
 });
 
