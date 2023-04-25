@@ -1,179 +1,97 @@
 import { Composer, Scenes } from "telegraf";
-import { ExtraReplyMessage, ExtraEditMessageText } from "telegraf/typings/telegram-types";
-import { ISentence, Sentence } from "../../models/ISentence";
+import { Translation, voteModel } from "../../models/ISentence";
 import rlhubContext from "../models/rlhubContext";
-import { ObjectId } from "mongodb";
+import { User } from "../../models/IUser";
+import greeting from "./moderationView/greeting";
+
+// handlers and renders 
+import moderation_translates, { render_vote_sentence } from "./moderationView/moderationTranslates";
+import { moderation_sentences, updateSentence } from "./moderationView/moderationSentencesHandler";
 
 const handler = new Composer<rlhubContext>();
 const moderation = new Scenes.WizardScene("moderation", handler,
-    async (ctx: rlhubContext) => moderation_sentences_handler(ctx));
+    async (ctx: rlhubContext) => moderation_sentences_handler(ctx),
+    async (ctx: rlhubContext) => moderation_translates_handler(ctx));
 
 moderation.enter(async (ctx: rlhubContext) => await greeting(ctx));
-async function greeting(ctx: rlhubContext) {
-
-    try {
-
-        let message: string = `<b>Модерация</b>\n\n`
-        const extra: ExtraEditMessageText = {
-            parse_mode: 'HTML',
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                        text: 'Предложения',
-                        callback_data: 'moderation_sentences'
-                    }],
-                    [{
-                        text: 'Переводы',
-                        callback_data: 'moderation_translates'
-                    }
-                    ],
-                    [{
-                        text: 'Назад',
-                        callback_data: 'back'
-                    }]
-                ]
-            }
-        }
-
-        message += `Выберите раздел чтобы приступить`
-
-        ctx.updateType === 'message' ? await ctx.reply(message, extra) : false
-        ctx.updateType === 'callback_query' ? await ctx.editMessageText(message, extra) : false
-
-    } catch (err) {
-
-        console.error(err);
-
-    }
-
-}
 
 moderation.action("moderation_translates", async (ctx) => await moderation_translates(ctx))
-async function moderation_translates(ctx: rlhubContext) {
-    try {
 
-        if (ctx.updateType === 'callback_query') {
+// обрабатываем голос
+async function moderation_translates_handler(ctx: rlhubContext) {
+    if (ctx.updateType === 'callback_query') {
 
-            ctx.answerCbQuery()
+
+        // сохраняем коллбэк
+        let data: 'back' | 'addTranslate' | 'good' | 'bad' | 'skip' = ctx.update.callback_query.data
+        let translate_id = ctx.scene.session.current_translation_for_vote
+
+
+        if (data === 'good') {
+
+            // получаем пользователя, чтоб вытянуть _id
+            let user = await User.findOne({ id: ctx.from?.id })
+
+
+            // Сохраняем голос +
+            await new voteModel({ user_id: user?._id, translation_id: translate_id, vote: true }).save().then(async (data) => {
+
+                // Возвращаем _id сохранненого голоса
+                let vote_id = data._id
+
+                // пушим в массив голосов докумена перевода
+                await Translation.findOneAndUpdate({ _id: translate_id }, { $push: { votes: vote_id } })
+                await User.findOneAndUpdate({ _id: user?._id }, { $addToSet: { voted_translations: translate_id } })
+            })
+
+        } else if (data === 'bad') {
+
+            // получаем пользователя, чтобы вытянуть _id
+            let user = await User.findOne({ id: ctx.from?.id })
+
+            // сохраняем голос -
+            await new voteModel({ user_id: user?._id, translation_id: translate_id, vote: false }).save().then(async (data) => {
+
+                // вернули айдишку
+                let vote_id = data._id
+
+                // сохранили айдишку в документе перевода
+                await Translation.findOneAndUpdate({ _id: translate_id }, { $push: { votes: vote_id } })
+                await User.findOneAndUpdate({ _id: user?._id }, { $addToSet: { voted_translations: translate_id } })
+            })
 
         }
 
-    } catch (err) {
+        // Если чел хочет вернутьтся на начальный экран модерации
+        if (data === 'back') {
 
-        console.log(err)
+            ctx.wizard.selectStep(0)
+            await greeting(ctx)
+
+        }
+
+        ctx.answerCbQuery()
+
+    } else {
+
+        await render_vote_sentence(ctx)
 
     }
-}
-async function moderation_translates_handler(ctx: rlhubContext) {
-    // 👍👎
 }
 
 moderation.action("moderation_sentences", async (ctx) => await moderation_sentences(ctx))
-async function moderation_sentences(ctx: rlhubContext) {
-    try {
 
-        let message: string = `<b>Модерация — Предложения</b>`
 
-        if (ctx.updateType === 'callback_query') {
-
-            Sentence.findOne({
-                accepted: "not view"
-            }).then(async (document: ISentence | null) => {
-                if (!document) {
-                    await ctx.answerCbQuery('Предложений не найдено')
-                    ctx.wizard.selectStep(0)
-                    await greeting(ctx).catch(() => { ctx.answerCbQuery('Предложений не найдено') })
-                } else {
-                    
-                    if (document._id) {
-                        ctx.session.__scenes.moderation_sentence = document._id.toString()
-                    }
-
-                    let message = `<b>Модерация</b> \n\n`
-                    let extra: ExtraEditMessageText = {
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: '👍',
-                                        callback_data: 'good'
-                                    },
-                                    {
-                                        text: '👎',
-                                        callback_data: 'bad'
-                                    }
-                                ],
-                                [
-                                    {
-                                        text: 'Назад',
-                                        callback_data: 'back'
-                                    }
-                                ]
-                            ]
-                        }
-                    }
-
-                    const options = {
-                        weekday: 'short', // короткое название дня недели, например 'Пн'
-                        year: 'numeric', // год, например '2023'
-                        month: 'short', // короткое название месяца, например 'апр'
-                        day: 'numeric', // число месяца, например '21'
-                        hour: 'numeric', // часы, например '17'
-                        minute: 'numeric', // минуты, например '14'
-                        second: 'numeric', // секунды, например '33'
-                    };
-
-                    const formattedDate = document.createdAt.toLocaleDateString('ru-RU', options); // 'Пн, 21 апр. 2023'
-                    // const formattedTime = document.createdAt.toLocaleTimeString('ru-RU', options); // '17:14:33'
-
-                    message += `${document.text} \n`
-                    message += `<pre>${formattedDate}</pre>`
-
-                    await ctx.editMessageText(message, extra)
-                    ctx.wizard.selectStep(1)
-                }
-            })
-
-            ctx.answerCbQuery()
-
-        }
-
-    } catch (err) {
-
-        console.log(err)
-
-    }
-}
-
-async function updateSentence(ctx: rlhubContext, value: 'accepted' | 'declined' | 'not view') {
-    await Sentence.findOneAndUpdate({ _id: new ObjectId(ctx.session.__scenes.moderation_sentence) }, {
-        $set: {
-            'accepted': value
-        }
-    }).then(async (res) => {
-        if (res) {
-            if (res.accepted === 'accepted') {
-                ctx.answerCbQuery('Предложение принято ✅')
-            } else if (res.accepted === 'declined') {
-                ctx.answerCbQuery('Предложение отправлено на рассмотрение')
-            }
-        }
-    }).catch(err => {
-        console.log(err)
-    })
-    await moderation_sentences(ctx) 
-}
 
 async function moderation_sentences_handler(ctx: rlhubContext) {
     try {
-        
+
         let update = ctx.updateType
 
         if (update === 'callback_query') {
 
             let data: 'back' | 'good' | 'bad' = ctx.update.callback_query.data
-            
+
             if (data === 'back') {
                 ctx.wizard.selectStep(0)
                 await greeting(ctx)
@@ -195,6 +113,10 @@ async function moderation_sentences_handler(ctx: rlhubContext) {
         console.log(err)
     }
 }
+
+moderation.action("moderation_vocabular", async (ctx) => {
+    ctx.answerCbQuery('Модерация словаря в разработке')
+})
 
 handler.on("message", async (ctx) => await greeting(ctx))
 

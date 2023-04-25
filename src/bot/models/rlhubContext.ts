@@ -5,7 +5,8 @@ interface rlhubWizardSession extends Scenes.WizardSessionData {
     sentence_id: string,
     amount: number,
     active_translation: string,
-    moderation_sentence: string
+    moderation_sentence: string,
+    current_translation_for_vote: ObjectId
 }
 
 interface rlhubSession extends Scenes.WizardSession<rlhubWizardSession> {
@@ -17,7 +18,8 @@ interface rlhubContext extends Context {
     session: rlhubSession;
     scene: Scenes.SceneContextScene<rlhubContext, rlhubWizardSession>;
     wizard: Scenes.WizardContextWizard<rlhubContext>,
-    update: any
+    update: any,
+    message: any
 }
 
 export default rlhubContext

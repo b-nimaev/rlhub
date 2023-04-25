@@ -37,7 +37,7 @@ export default async function greeting(ctx: rlhubContext) {
 
         if (ctx.from) {
             if (ctx.from?.first_name) {
-                message = `<b>Настройки</b> \n\nИмя пользователя: <b>${ctx.from?.first_name}</b>`
+                message = `<b>Личный кабинет / Настройки</b> \n\nИмя пользователя: <b>${ctx.from?.first_name}</b>`
             } else {
                 message = `<b>Настройки</b> \n\nИмя пользователя: <b>${ctx.from?.id}</b>`
             }

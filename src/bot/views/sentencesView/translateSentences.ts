@@ -30,7 +30,7 @@ export default async function translate_sentences(ctx: rlhubContext) {
             callback_data: 'start'
         }])
 
-        await Sentence.find({ skipped_by: { $in: [ctx.from?.id] }, accepted: 'accepted' }).then(async (docs) => {
+        await Sentence.find({ skipped_by: { $in: [ctx.from?.id] } }).then(async (docs) => {
             if (docs.length > 0) {
                 extra.reply_markup?.inline_keyboard.push([{
                     text: `Сброс skipped(${docs.length})`,

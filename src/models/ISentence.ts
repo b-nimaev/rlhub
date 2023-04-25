@@ -1,27 +1,35 @@
 import mongoose, { Schema, Document, ObjectId, model } from "mongoose";
 
 interface vote {
-    user_id: number,
+    user_id: ObjectId,
+    translation_id: ObjectId,
     vote: boolean
 }
+
+const voteSchema: Schema<vote> = new mongoose.Schema({
+    user_id: { type: mongoose.Schema.Types.ObjectId, required: true },
+    translation_id: { type: mongoose.Schema.Types.ObjectId, required: true },
+    vote: { type: Boolean, required: true }
+}, {
+    timestamps: true
+})
+
+export const voteModel = model<vote>("votes", voteSchema)
 
 interface translation {
     sentence_russian: string;
     translate_text: string;
     author: number;
-    votes: vote[];
+    votes?: ObjectId[];
+    skipped_by?: ObjectId[]
 }
 
 const translationSchema: Schema<translation> = new mongoose.Schema({
     sentence_russian: { type: String, required: true },
     translate_text: { type: String, required: true },
     author: { type: Number, required: true },
-    votes: {
-        type: [{
-            user_id: { type: Number, required: true },
-            vote: { type: Boolean, required: true }
-        }], default: []
-    },
+    votes: {  type: [mongoose.Schema.Types.ObjectId], required: false },
+    skipped_by: { type: [mongoose.Schema.Types.ObjectId], required: false }
 })
 
 const Translation = model<translation>("Translation", translationSchema);

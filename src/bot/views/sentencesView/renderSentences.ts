@@ -6,6 +6,7 @@ export async function render_sentencse_for_translate(ctx: rlhubContext, sentence
 
     let message: string = ''
 
+    // Текущее предложение
     // @ts-ignore
     ctx.scene.session.sentence_id = sentence._id.toString()
     message += `Отправьте перевод предложения: \n`
@@ -14,12 +15,16 @@ export async function render_sentencse_for_translate(ctx: rlhubContext, sentence
 
     if (sentence?.translations.length) {
 
+        // получаем существующие переводы
         let translations: {
             author_translation: translation[],
             common_translation: translation[]
         } | false = await get_tranlations(ctx, sentence)
 
+        // если они существуют
         if (translations) {
+
+            // переводы посторонних
             if (translations.common_translation.length) {
                 message += `\n\n<i>Переводы пользователей</i>`
 

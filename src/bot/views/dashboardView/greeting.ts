@@ -55,7 +55,8 @@ export default async function greeting(ctx: rlhubContext) {
             message += `Добавлено слов: 0 \n`
             message += `Слов на модерации: ${words.length} \n`
             message += `Переведено предложений: 0 \n`
-            message += `Добавлено предложений: ${user.proposedProposals.length}`
+            message += `Добавлено предложений: ${user.proposedProposals.length}\n`
+            message += `Проголосовано предложений: ${user.voted_translations.length}`
 
             message += `\n\n<b>Внесено в проект ${format_money(user.supported)} ₽</b>`
 

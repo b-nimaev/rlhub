@@ -22,6 +22,7 @@ export default async function render_sft(ctx: rlhubContext) {
             }
         }
 
+        // получение предложения которое нужно перевести
         // @ts-ignore
         let sentence: ISentence = await Sentence.aggregate([
             { $match: { skipped_by: { $ne: ctx.from?.id }, accepted: 'accepted' } },
@@ -34,78 +35,73 @@ export default async function render_sft(ctx: rlhubContext) {
         })
 
         console.log(sentence)
-        // ctx.scene.session.active_translation
-        // @ts-ignore
-        // let sentence: ISentence = await Sentence.aggregate([
-        //     { $match: { skipped_by: { $ne: ctx.from?.id } } },
-        //     {
-        //         $project: {
-        //             text: 1,
-        //             active_translator: 1,
-        //             translations: 1,
-        //             translations_length: { $size: "$translations" }
-        //         }
-        //     },
-        //     {
-        //         $sort: {
-        //             active_translator: 1,
-        //             translations_length: 1
-        //         }
-        //     },
-        //     { $limit: 1 }
-        // ]).then(async (docs) => {
-        //     return docs[0]
-        // })
 
+        // если он найден
         if (sentence) {
 
             await render_sentencse_for_translate(ctx, sentence).then((response: string) => {
                 message += response
             })
 
+            // Вернули объект, либо false
             let translations: {
                 author_translation: translation[],
                 common_translation: translation[]
             } | false = await get_tranlations(ctx, sentence)
 
+            // Если объект существует
             if (translations) {
 
                 if (translations.author_translation.length > 0) {
 
+                    // Если у пользвателя ест переводы, добавим кнопку продолжить
                     extra.reply_markup?.inline_keyboard.push([{ text: 'Дальше', callback_data: 'continue' }])
 
                 } else {
+
+                    // Если и пользователя нет переводов, добавим кнопку пропустить
                     extra.reply_markup?.inline_keyboard.push([{ text: 'Пропустить', callback_data: 'skip' }])
+
                 }
 
-                await User.findOne({
-                    id: ctx.from?.id
-                }).then(async (user) => {
-                    await new ActiveTranslator({
-                        user_id: user?._id
-                    }).save().then(async (document) => {
-                        await Sentence.findOneAndUpdate({
-                            _id: sentence._id
-                        }, {
-                            $push: {
-                                active_translator: document.id.toString()
-                            }
-                        }).then(async () => {
+                await User.findOne({ id: ctx.from?.id }).then(async (user) => {
+
+                    // Создаем документ активного переводчика
+                    await new ActiveTranslator({ user_id: user?._id }).save().then(async (document) => {
+
+                        // далее идентификатор созданного активного переводчика
+                        // добавляем в массив active_translator в документе текущего Sentence
+                        await Sentence.findOneAndUpdate({ _id: sentence._id }, { $push: { active_translator: document.id.toString() } }).then(async () => {
+
+                            // айди созданного активного переводчика сохраняем в контекст бота
                             ctx.scene.session.active_translation = document.id.toString()
+
+                            // устанавливаем таймер в 1 минуту
                             setTimeout(async () => {
-                                await Sentence.findOneAndUpdate({
-                                    _id: sentence._id
-                                }, {
-                                    $pull: {
-                                        active_translator: document.id.toString()
-                                    }
-                                }).then(async () => {
-                                    const message = `User ${user?._id} removed active translator ${document.id} from sentence ${sentence._id} at ${moment().tz(timezone).toISOString()}\n`;
+
+                                // удаляем идентификатор активного переводчика из Sentence
+                                await Sentence.findOneAndUpdate({ _id: sentence._id }, { $pull: { active_translator: document.id.toString() } }).then(async () => {
+                                    
+                                    // Запишем это в лог
+                                    const message = `Активный переводчик ${document.id} удален из предложения ${sentence._id} at ${now.toISOString()}\n`;
                                     fs.appendFile('log.txt', message, (err) => {
                                         if (err) throw err;
                                     });
+
+                                    await ActiveTranslator.findOneAndDelete({
+                                        _id: new ObjectId(document.id)
+                                    }).then(async () => {
+                                        const message = `Документ активного переводчика ${document.id} удален`
+                                        fs.appendFile('log.txt', message, (err) => {
+                                            if (err) throw err;
+                                        });
+                                    })
+
                                 }).catch(err => {
+                                    
+                                    // Типа обработки ошибки
                                     console.log(err)
+                                
                                 })
                             }, 60 * 1000);
                         })
@@ -117,6 +113,7 @@ export default async function render_sft(ctx: rlhubContext) {
 
         } else {
 
+            // если предложений нет
             message += `Предложений не найдено`
             extra.reply_markup?.inline_keyboard.push([{ text: 'Добавить предложения', callback_data: 'add_sentence' }])
 
@@ -194,6 +191,16 @@ export async function add_translate_to_sentences_hander(ctx: rlhubContext) {
                                 fs.appendFile('log.txt', message_log, (err) => {
                                     if (err) throw err;
                                 });
+
+                                await ActiveTranslator.findOneAndDelete({
+                                    _id: new ObjectId(ctx.scene.session.active_translation)
+                                }).then(async () => {
+                                    const message_log = `Документ активного переводчика ${ctx.from?.id} удален из предложения ${ctx.session.__scenes.sentence_id} ${now.toISOString()}\n`;
+                                    fs.appendFile('log.txt', message_log, (err) => {
+                                        if (err) throw err;
+                                    });
+                                })
+
                                 await render_sft(ctx)
                             }
                         })
@@ -218,8 +225,7 @@ export async function add_translate_to_sentences_hander(ctx: rlhubContext) {
                     let translation: translation = {
                         sentence_russian: ctx.scene.session.sentence_id,
                         translate_text: text,
-                        author: user_id,
-                        votes: []
+                        author: user_id
                     }
 
                     console.log(ctx.scene.session.active_translation)
