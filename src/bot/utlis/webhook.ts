@@ -12,7 +12,7 @@ export default async function set_webhook() {
         await fetch('http://localhost:4040/api/tunnels')
             .then((res: { json: () => any; }) => res.json())
             .then((json: { tunnels: any[]; }) => json.tunnels.find(tunnel => tunnel.proto === 'https'))
-            .then((secureTunnel: { public_url: any; }) => bot.telegram.setWebhook(`${secureTunnel.public_url}/bot${process.env.secret_path}`))
+            .then((secureTunnel: { public_url: any; }) => bot.telegram.setWebhook(`${secureTunnel.public_url}/bot`))
             .then(async (status: any) => {
                 console.log(`webhook setted: ${status}`)
             })

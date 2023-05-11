@@ -1,7 +1,5 @@
-import { Document, ObjectId, Schema } from "mongoose";
-import { Composer, Context, Scenes } from "telegraf";
-import { Message, Update } from "telegraf/typings/core/types/typegram";
-import { ExtraEditMessageText, ExtraReplyMessage } from "telegraf/typings/telegram-types";
+import { Composer, Scenes } from "telegraf";
+import { ExtraEditMessageText } from "telegraf/typings/telegram-types";
 import { ISentence, Sentence } from "../../models/ISentence";
 import { IUser, User } from "../../models/IUser";
 import rlhubContext from "../models/rlhubContext";
@@ -28,8 +26,6 @@ async function greeting (ctx: rlhubContext) {
     }
 
     let message = `Самоучитель бурятского языка \n\nКаждое взаимодействие с ботом, \nвлияет на сохранение и дальнейшее развитие <b>Бурятского языка</b>`
-    // message += `\n\nДля оцифровки и создания машинного перевода с любого языка на бурятский и обратно требуется неимоверно <b>много данных</b>`
-    // message += `\n\nНаша цель собрать 100 000 корректных переводов предложений из разных сфер жизни, для создания машинного-бурятского языка`
     message += '\n\nВыберите раздел, чтобы приступить'
 
     try {
@@ -48,6 +44,8 @@ home.start(async (ctx: rlhubContext) => {
         let document: IUser | null = await User.findOne({
             id: ctx.from?.id
         })
+
+        console.log(document)
 
         if (!document) {
 
@@ -116,6 +114,7 @@ home.command("reset_activet", async (ctx) => {
         active_translator: []
     })
 })
+
 
 async function add_sentences_handler (ctx: rlhubContext) {
 
@@ -239,6 +238,6 @@ async function add_sentences_handler (ctx: rlhubContext) {
 }
 
 handler.on("message", async (ctx) => await greeting (ctx))
-
+handler.action(/\./, async (ctx) => await greeting (ctx))
 export default home
 export { add_sentences_handler }
