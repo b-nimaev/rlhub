@@ -11,7 +11,6 @@ const app = express();
 app.use(bodyParser.json());
 
 app.post(`/bot`, (req, res) => {
-    console.log('handler')
     bot.handleUpdate(req.body, res);
 });
 
