@@ -52,11 +52,12 @@ export default async function greeting(ctx: rlhubContext) {
             let words = []
             let message: string = `<b>Личный кабинет</b> \n\n`
             message += `Общий рейтинг: ${user.rating} \n`
-            message += `Добавлено слов: 0 \n`
-            message += `Слов на модерации: ${words.length} \n`
-            message += `Переведено предложений: 0 \n`
-            message += `Добавлено предложений: ${user.proposedProposals.length}\n`
-            message += `Проголосовано предложений: ${user.voted_translations.length}`
+            // message += `Добавлено слов: 0 \n`
+            // message += `Слов на модерации: ${words.length} \n`
+            message += `Предложено предложений для перевода: ${user.proposedProposals.length}\n`
+            
+            message += `Количество переведенных предложений: 0 \n`
+            message += `Количество голосов за перевод: ${user.voted_translations.length}`
 
             message += `\n\n<b>Внесено в проект ${format_money(user.supported)} ₽</b>`
 

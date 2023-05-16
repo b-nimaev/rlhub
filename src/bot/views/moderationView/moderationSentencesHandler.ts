@@ -3,6 +3,7 @@ import { ISentence, Sentence } from "../../../models/ISentence"
 import rlhubContext from "../../models/rlhubContext"
 import greeting from "./greeting"
 import { ExtraEditMessageText } from "telegraf/typings/telegram-types"
+import { User } from "../../../models/IUser"
 
 export async function moderation_sentences_handler(ctx: rlhubContext) {
     try {
@@ -36,6 +37,8 @@ export async function moderation_sentences_handler(ctx: rlhubContext) {
 }
 
 export async function updateSentence(ctx: rlhubContext, value: 'accepted' | 'declined' | 'not view') {
+
+
     await Sentence.findOneAndUpdate({ _id: new ObjectId(ctx.session.__scenes.moderation_sentence) }, {
         $set: {
             'accepted': value

@@ -1,11 +1,14 @@
 import { ObjectId } from "mongodb"
 import { ExtraEditMessageText } from "telegraf/typings/telegram-types"
-import { Translation, Sentence, voteModel } from "../../../models/ISentence"
+import { Translation, Sentence, voteModel, translation } from "../../../models/ISentence"
 import rlhubContext from "../../models/rlhubContext"
+import { response } from "express"
 
 export default async function moderation_translates(ctx: rlhubContext) {
     try {
+
         await render_vote_sentence(ctx)
+
     } catch (err) {
 
         console.log(err)
@@ -17,7 +20,22 @@ export async function render_vote_sentence(ctx: rlhubContext) {
     try {
 
         // получаем перевод и предложение которое переведено
-        let translation = await Translation.findOne()
+        let translation: translation = await Translation.aggregate([
+            { $addFields: { votesCount: { $size: "$votes" } } },
+            { $sort: { votesCount: 1 } },
+            { $limit: 1 }
+        ]).then(async (response) => {
+            return response[0]
+        }).catch(async (err) => {
+            console.error(err)
+        })
+
+        if (!translation) {
+            if (ctx.updateType === 'callback_query') {
+                return ctx.answerCbQuery('Предложений не найдено')
+            }
+        } 
+
         let sentence_russian = await Sentence.findOne({
             _id: new ObjectId(translation?.sentence_russian)
         })
